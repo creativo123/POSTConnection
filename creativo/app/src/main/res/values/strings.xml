@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">CreativoPostConnection</string>
+    <color name="positive">#4CAF50</color>
+    <color name="negative">#f44336</color>
+    <color name="friendly">#FFCA28</color>
+</resources>
