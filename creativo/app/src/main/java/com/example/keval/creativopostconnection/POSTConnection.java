@@ -1,4 +1,4 @@
-package com.example.keval.creativopostconnection;
+package com.example.keval.roomonrent;
 
 import android.os.AsyncTask;
 
@@ -24,10 +24,7 @@ import java.util.Set;
  * For more visit www.creativek.me
  */
 
-// declare internet permission in Android Manifest first
-
 public abstract class POSTConnection {
-
 
     private URL serverUrl = null;
     private HttpURLConnection connection = null;
@@ -42,9 +39,6 @@ public abstract class POSTConnection {
         return data;
     }
 
-    /**
-     * @param data HashMap<String, String> data
-     */
     public void setData(HashMap<String, String> data) {
         this.data = data;
     }
@@ -92,8 +86,11 @@ public abstract class POSTConnection {
         while ((line = in.readLine()) != null) {
             sb.append(line);
         }
-
-        setJsonResponse(new JSONObject(sb.toString()));
+        if (sb.toString().isEmpty()) {
+            setJsonResponse(null);
+        } else {
+            setJsonResponse(new JSONObject(sb.toString()));
+        }
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
             return true;
@@ -140,6 +137,8 @@ public abstract class POSTConnection {
         protected Boolean doInBackground(String... params) {
             try {
                 result = HttpConnect();
+
+
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
