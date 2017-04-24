@@ -1,5 +1,7 @@
 package com.example.keval.roomonrent;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
 import org.json.JSONException;
@@ -8,6 +10,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -26,10 +29,21 @@ import java.util.Set;
 
 public abstract class POSTConnection {
 
+    // DECLARATION
     private URL serverUrl = null;
     private HttpURLConnection connection = null;
     private HashMap<String, String> data = new HashMap<>();
     private JSONObject jsonResponse = null;
+    private Bitmap bitmap = null;
+
+    // GETTER AND SETTER
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
+    }
 
     public HttpURLConnection getConnection() {
         return connection;
@@ -61,7 +75,7 @@ public abstract class POSTConnection {
     }
 
 
-    public Boolean HttpConnect() throws IOException, JSONException {
+    public Boolean HttpConnect() throws IOException {
 
         // Connection Establish
         connection = (HttpURLConnection) serverUrl.openConnection();
@@ -89,7 +103,12 @@ public abstract class POSTConnection {
         if (sb.toString().isEmpty()) {
             setJsonResponse(null);
         } else {
-            setJsonResponse(new JSONObject(sb.toString()));
+            try {
+                setJsonResponse(new JSONObject(sb.toString()));
+            } catch (JSONException e) {
+                setJsonResponse(null);
+                e.printStackTrace();
+            }
         }
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
@@ -105,6 +124,36 @@ public abstract class POSTConnection {
         writer.write((parameterEncoder()));
         writer.flush();
         writer.close();
+    }
+
+
+    public boolean getImage() throws IOException {
+        // Connection Establish
+        connection = (HttpURLConnection) serverUrl.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setDoInput(true);
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(15000);
+        connection.setChunkedStreamingMode(0);
+
+        // Write parameters
+        WriteParameters();
+
+        // Connect
+        connection.connect();
+        StringBuilder sb = new StringBuilder();
+
+
+        //Read response
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        setBitmap(BitmapFactory.decodeStream(connection.getInputStream()));
+
+
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            return true;
+        }
+        return false;
     }
 
     // Parameter Encoder
@@ -130,6 +179,13 @@ public abstract class POSTConnection {
 
     public abstract void doOnFail();
 
+
+    // Download Image
+    public void downloadImage() {
+        new BackgroundWorkerImage().execute();
+    }
+
+    // Async Class
     public class BackgroundWorker extends AsyncTask<String, Integer, Boolean> {
         boolean result = false;
 
@@ -139,7 +195,7 @@ public abstract class POSTConnection {
                 result = HttpConnect();
 
 
-            } catch (IOException | JSONException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return result;
@@ -156,5 +212,35 @@ public abstract class POSTConnection {
             }
         }
     }
+
+
+    // Async Class
+    public class BackgroundWorkerImage extends AsyncTask<String, Integer, Boolean> {
+        boolean result = false;
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            try {
+                result = getImage();
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
+
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+            if (result) {
+                doOnSuccess();
+            } else {
+                doOnFail();
+            }
+        }
+    }
+
 
 }
